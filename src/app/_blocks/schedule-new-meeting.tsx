@@ -145,7 +145,7 @@ const ScheduleNewMeeting = ({ email }: { email: string }) => {
               Select out the details below to schedule a meeting with our team.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-8 h-[50vh] overflow-y-auto">
+          <CardContent className="space-y-8">
             <FormField
               control={form.control}
               name="memberId"
@@ -286,7 +286,7 @@ const ScheduleNewMeeting = ({ email }: { email: string }) => {
           <CardFooter>
             <Button disabled={isPending} type="submit" className="w-full">
               {isPending && <Loader className="mr-2 h-4 w-4 animate-spin" />}
-              {isPending ? "Sending..." : "Send Mail"}
+              {isPending ? "Creating..." : "Create Schedule"}
             </Button>
           </CardFooter>
         </Card>

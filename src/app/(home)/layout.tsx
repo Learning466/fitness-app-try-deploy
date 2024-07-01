@@ -1,9 +1,4 @@
-
-
 import React, { Suspense } from "react";
-import { Button } from "@/components/ui/button";
-import { AvatarImage, AvatarFallback, Avatar } from "@/components/ui/avatar";
-import { Menu } from "lucide-react";
 import NavigationBar from "../_blocks/navigation-bar";
 import { auth } from "@/core/auth/auth";
 import { db } from "@/core/client/client";
@@ -13,17 +8,15 @@ import { redirect } from "next/navigation";
 
 const Layout = async ({ children }: { children: React.ReactNode }) => {
   const session = await auth();
-  if(!session){
-    return redirect("/auth")
+  if (!session) {
+    return redirect("/auth");
   }
   const userData = await db.user.findFirst({
     where: {
       email: session?.user?.email as string,
     },
   });
-  
-  
-  
+
   return (
     <div className="flex flex-col h-dvh">
       <Suspense fallback={null}>
@@ -33,14 +26,13 @@ const Layout = async ({ children }: { children: React.ReactNode }) => {
           email={userData?.email || ""}
         />
       </Suspense>
-      <Suspense fallback={null}>
+      {/* <Suspense fallback={null}>
         <BreadCrumbs />
-      </Suspense>
+      </Suspense> */}
       <main className="flex-1 overflow-y-auto">{children}</main>
       <Suspense fallback={null}>
         <NavigationBar userRole={userData?.role || "USER"} />
       </Suspense>
-      
     </div>
   );
 };

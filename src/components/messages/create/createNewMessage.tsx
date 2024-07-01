@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
+import { any, z } from "zod";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -13,6 +13,14 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+} from "@/components/ui/dropdown-menu";
+
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
@@ -21,6 +29,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getSession } from "next-auth/react";
 import { Session } from "next-auth";
+import Image from "next/image";
 
 const FormSchema = z.object({
   subject: z.string(),
@@ -41,6 +50,22 @@ export default function CreateNewMessage() {
     },
   });
 
+  const [trainers, setTrainers] = useState([]);
+
+  const fetchTrainer = async () => {
+    try {
+      const response = await fetch("/api/trainers");
+      const data = await response.json();
+      // Filter the trainers based on role
+      const trainerData = data?.filter(
+        (user: { role: string }) => user?.role === "TRAINER"
+      );
+      setTrainers(trainerData);
+    } catch (error) {
+      console.error("Error fetching trainers:", error);
+    }
+  };
+
   useEffect(() => {
     const fetchSession = async () => {
       try {
@@ -52,6 +77,7 @@ export default function CreateNewMessage() {
     };
 
     fetchSession();
+    fetchTrainer();
   }, []);
 
   async function onSubmit(values: z.infer<typeof FormSchema>) {
@@ -61,24 +87,25 @@ export default function CreateNewMessage() {
         ...values,
       };
 
-      const response = await fetch('/api/mess/create', {
-        method: 'POST',
+      const response = await fetch("/api/mess/create", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(payload),
       });
 
-      const data: { error?: string; success?: string; feedback?: string } = await response.json();
+      const data: { error?: string; success?: string; feedback?: string } =
+        await response.json();
 
-      if (data.error) {
-        toast.error(data.error);
+      if (data?.error) {
+        toast.error(data?.error);
         setIsPending(false);
         form.reset();
         return;
       }
 
-      if (data.success) {
+      if (data?.success) {
         toast.success(data?.feedback);
         setIsPending(false);
         form.reset();
@@ -86,7 +113,7 @@ export default function CreateNewMessage() {
         return;
       }
     } catch (error: any) {
-      toast.error(error.message);
+      toast.error(error?.message);
       setIsPending(false);
       form.reset();
     } finally {
@@ -109,14 +136,47 @@ export default function CreateNewMessage() {
           name="to"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>To:</FormLabel>
+              <FormLabel>Trainer: </FormLabel>
               <FormControl>
-                <Input type="email" placeholder="John@example.com" {...field} />
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size={"sm"} className="ml-2">
+                      {field?.value || "Select"}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-96 p-0">
+                    <DropdownMenuRadioGroup
+                      value={field.value}
+                      onValueChange={(value) => {
+                        field?.onChange(value);
+                      }}
+                    >
+                      {trainers?.map((trainer: any, index: number) => (
+                        <DropdownMenuRadioItem
+                          key={trainer?.id}
+                          value={trainer?.email}
+                          className="flex items-center justify-start gap-2 p-2"
+                        >
+                          <span>{index + 1}.</span>
+                          <Image
+                            src={trainer?.image}
+                            alt={trainer?.name}
+                            width={32}
+                            height={32}
+                            className="rounded-full"
+                          />
+                          <p>{trainer?.name}</p>
+                        </DropdownMenuRadioItem>
+                      ))}
+                    </DropdownMenuRadioGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
+
         <FormField
           control={form.control}
           name="subject"
@@ -130,6 +190,7 @@ export default function CreateNewMessage() {
             </FormItem>
           )}
         />
+
         <FormField
           control={form.control}
           name="text"
@@ -144,7 +205,6 @@ export default function CreateNewMessage() {
                 />
               </FormControl>
               <FormDescription>
-                You can <span>@mention</span> other users.
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -152,7 +212,7 @@ export default function CreateNewMessage() {
         />
         <Button disabled={isPending} type="submit" className="w-full">
           {isPending && <Loader className="mr-2 h-4 w-4 animate-spin" />}
-          {isPending ? "Sending..." : "Send Mail"}
+          {isPending ? "Creating..." : "Create Connection"}
         </Button>
       </form>
     </Form>
